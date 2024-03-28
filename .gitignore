@@ -1,0 +1,9 @@
+*/glad
+*/KHR
+out/
+
+*.o
+glad.c
+*.a
+
+.DS_Store
