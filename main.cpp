@@ -29,6 +29,7 @@ int main(void) {
   // TODO: make this line conditional for MacOS
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
+  // window creation
   GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
   if (window == NULL) {
     std::cout << "Failed to create GLFW window" << std::endl;
@@ -44,18 +45,11 @@ int main(void) {
   }
 
   // set window size and re-size callback function
-  glViewport(0, 0, 800, 600);
+  int fbSizeX, fbSizeY;
+  glfwGetFramebufferSize(window, &fbSizeX, &fbSizeY);
+  glViewport(0, 0, fbSizeX, fbSizeY);
 
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-  // triangle vertices
-  float vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
-
-  // vertex buffer object
-  unsigned int VBO;
-  glGenBuffers(1, &VBO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   // vertex shader
   unsigned int vertexShader;
@@ -103,27 +97,40 @@ int main(void) {
               << infoLog << std::endl;
   }
 
-  //   glUseProgram(shaderProgram);
-
   // apparently we don't need these once they're linked to the program
-//   glDeleteShader(vertexShader);
-//   glDeleteShader(fragmentShader);
+  glDeleteShader(vertexShader);
+  glDeleteShader(fragmentShader);
 
-  // tell OpenGL how to interpret vertex data
-  //   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-  //   (void*)0); glEnableVertexAttribArray(0);
+  // triangle vertices
+  float vertices[] = {
+     0.5f,  0.5f, 0.0f,
+     0.5f, -0.5f, 0.0f, 
+    -0.5f, -0.5f, 0.0f, 
+    -0.5f,  0.5f, 0.0f
+  };
+  unsigned int indices[] = {
+    0, 1, 3,
+    1, 2, 3
+  };
 
-  unsigned int VAO;
+  unsigned int VBO, VAO, EBO;
   glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
 
-  glUseProgram(shaderProgram);
   glBindVertexArray(VAO);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
 
-  //   glBindVertexArray(VAO);
+
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+
+  // TODO: unbind vertex array and vertex bound buffer
+
+  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // render loop, 1 iteration = 1 frame
   while (!glfwWindowShouldClose(window)) {
@@ -133,14 +140,21 @@ int main(void) {
     // rendering commands
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    // glUseProgram(shaderProgram);
-    // glBindVertexArray(VAO);
-    // glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    // draw triangle
+    glUseProgram(shaderProgram);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     // check and call events and swap the buffers
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
+  glDeleteVertexArrays(1, &VAO);
+  glDeleteBuffers(1, &VBO);
+  glDeleteProgram(shaderProgram);
 
   glfwTerminate();
   return 0;
